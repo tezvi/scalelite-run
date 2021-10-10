@@ -118,4 +118,5 @@ docker-compose run --rm --entrypoint "\
 echo
 
 echo "### Reloading $NGINX_CONTAINER_NAME..."
+sleep 10 # wait until container is ready
 docker-compose exec $([ "$interactive" -ne 1 ] && echo "-T") $NGINX_CONTAINER_NAME nginx -s reload
