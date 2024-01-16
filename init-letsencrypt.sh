@@ -1,8 +1,9 @@
 #!/bin/bash
 
+cd "$(dirname "$0")"
+
 if ! [ -x "$(command -v docker-compose)" ]; then
-  echo 'Error: docker-compose is not installed.' >&2
-  exit 1
+  alias docker-compose=/usr/bin/docker-compose
 fi
 
 if [[ ! -f ./.env ]]; then
@@ -40,7 +41,8 @@ if [[ -z "$NGINX_CONTAINER_NAME" ]]; then
   NGINX_CONTAINER_NAME=scalelite-proxy
 fi
 
-domains=($URL_HOST,redis.$URL_HOST)
+#domains=($URL_HOST,redis.$URL_HOST)
+domains=($URL_HOST)
 rsa_key_size=4096
 data_path="./data/certbot"
 email="$LETSENCRYPT_EMAIL" # Adding a valid address is strongly recommended
@@ -78,7 +80,7 @@ echo
 
 
 echo "### Starting $NGINX_CONTAINER_NAME ..."
-docker-compose up --force-recreate -d $NGINX_CONTAINER_NAME
+#docker-compose up --force-recreate -d $NGINX_CONTAINER_NAME
 echo
 
 echo "### Deleting dummy certificate for $domains ..."
@@ -119,4 +121,5 @@ echo
 
 echo "### Reloading $NGINX_CONTAINER_NAME..."
 sleep 10 # wait until container is ready
+echo "Reloading nginx with new configuration"
 docker-compose exec $([ "$interactive" -ne 1 ] && echo "-T") $NGINX_CONTAINER_NAME nginx -s reload
