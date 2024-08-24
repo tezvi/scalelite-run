@@ -1,11 +1,12 @@
 #!/bin/bash
 
+cd "$(dirname "$0")"
+
 ## Scrip based on https://github.com/wmnnd/nginx-certbot
 ## https://pentacent.medium.com/nginx-and-lets-encrypt-with-docker-in-less-than-5-minutes-b4b8a60d3a71
 
 if ! [ -x "$(command -v docker-compose)" ]; then
-  echo 'Error: docker-compose is not installed.' >&2
-  exit 1
+  alias docker-compose=/usr/bin/docker-compose
 fi
 
 if [[ ! -f ./.env ]]; then
@@ -20,7 +21,7 @@ if [ -f .env ]; then
 fi
 
 if [[ -z "$LETSENCRYPT_EMAIL" ]]; then
-  echo "Settung up an email for letsencrypt certificates is strongly recommended."
+  echo "Setting up an email for letsencrypt certificates is strongly recommended."
   exit 1
 fi
 
@@ -49,6 +50,7 @@ done
 
 echo $URL_HOST
 
+#domains=($URL_HOST,redis.$URL_HOST)
 domains=($URL_HOST)
 rsa_key_size=4096
 data_path="./data/certbot"
@@ -85,8 +87,9 @@ docker-compose run --rm --entrypoint "\
     -subj '/CN=localhost'" certbot
 echo
 
-echo "### Starting scalelite-proxy ..."
-docker-compose up --force-recreate -d scalelite-proxy
+
+echo "### Starting $NGINX_CONTAINER_NAME ..."
+#docker-compose up --force-recreate -d $NGINX_CONTAINER_NAME
 echo
 
 echo "### Deleting dummy certificate for $domains ..."
@@ -124,5 +127,7 @@ docker-compose run --rm --entrypoint "\
     --force-renewal" certbot
 echo
 
-echo "### Reloading scalelite-proxy..."
-docker-compose exec $([ "$interactive" -ne 1 ] && echo "-T") scalelite-proxy nginx -s reload
+echo "### Reloading $NGINX_CONTAINER_NAME..."
+sleep 10 # wait until container is ready
+echo "Reloading nginx with new configuration"
+docker-compose exec $([ "$interactive" -ne 1 ] && echo "-T") $NGINX_CONTAINER_NAME nginx -s reload
